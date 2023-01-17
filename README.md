@@ -1,2 +1,2 @@
-# clickjacking-test
-html page to test for "Clickjacking" and create a proof screenshot. Just add target page into code and make proof screenshot :)
+# CWE-1021: Improper Restriction of Rendered UI Layers or Frames
+aka "Clickjacking"
