@@ -7,7 +7,7 @@ A "Clickjacking" demonstration tool for security assessments.
 <img width="1751" height="900" alt="image" src="https://github.com/user-attachments/assets/15dec245-571f-4449-a12b-780214c3f693" />
 
 ## Features
-- **Multiple Attack Scenarios**: Click hijacking, credential harvesting, payment confirmation, OAuth permissions
+- **Attack Scenarios**: Click hijacking, credential harvesting
 - **Credential Harvesting Mode**: Overlay captures login credentials in real-time
 - **Stealth Mode**: Invisible form borders with solid background to mask real placeholders
 - **Full Positioning Controls**: Arrow pad, X/Y/W, field sizing, radius, padding, button offset
