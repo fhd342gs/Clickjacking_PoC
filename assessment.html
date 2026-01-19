@@ -861,12 +861,8 @@
         <div class="control-group">
             <label for="scenarioSelect">Attack Scenario:</label>
             <select id="scenarioSelect">
-                <option value="custom">Custom Target</option>
-                <option value="social">Social Media - Like/Follow</option>
-                <option value="payment">Payment - Confirm Transfer</option>
-                <option value="permissions">Permissions - Grant Access</option>
-                <option value="danger">Account - Delete/Disable</option>
                 <option value="credential">Credential Harvesting (Login Form)</option>
+                <option value="custom">Custom Target</option>
             </select>
         </div>
 
@@ -1082,8 +1078,8 @@
             // Target display name
             targetName: '',  // e.g., 'Example Corp'
 
-            // Default scenario: 'custom', 'social', 'payment', 'permissions', 'danger', 'credential'
-            defaultScenario: 'custom',
+            // Default scenario: 'credential', 'custom'
+            defaultScenario: 'credential',
 
             // Default iframe opacity (0-100) - FOR ATTACKER VIEW ONLY
             // In Attacker View: adjust to see both iframe and overlay for alignment
@@ -1116,51 +1112,6 @@
         // Scenario Templates Data
         // ===========================================
         const scenarios = {
-            custom: {
-                title: "Congratulations!",
-                message: "You've been selected for a special reward. Click the button below to claim your prize!",
-                buttonText: "Claim Prize!",
-                theme: "",
-                action: "Performed an unintended action on the target website",
-                isCredential: false,
-                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
-            },
-            social: {
-                title: "Check This Out!",
-                message: "Your friend shared an amazing post with you. Click below to see what everyone is talking about!",
-                buttonText: "View Post",
-                theme: "theme-social",
-                action: "Liked a post, followed an account, or shared content without consent",
-                isCredential: false,
-                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
-            },
-            payment: {
-                title: "Payment Confirmation",
-                message: "Your order is ready! Click below to confirm your shipping details and complete checkout.",
-                buttonText: "Confirm Order",
-                theme: "theme-payment",
-                action: "Confirmed a payment, transferred funds, or authorized a transaction",
-                isCredential: false,
-                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
-            },
-            permissions: {
-                title: "App Authorization",
-                message: "This app needs your permission to continue. Click below to grant access and unlock all features.",
-                buttonText: "Grant Access",
-                theme: "theme-permissions",
-                action: "Granted OAuth permissions, API access, or account authorizations",
-                isCredential: false,
-                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
-            },
-            danger: {
-                title: "Security Verification",
-                message: "We detected unusual activity. Please verify your identity by clicking the button below.",
-                buttonText: "Verify Now",
-                theme: "theme-danger",
-                action: "Deleted account data, disabled security features, or changed critical settings",
-                isCredential: false,
-                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
-            },
             credential: {
                 title: "Credential Harvesting",
                 message: "Fake login form overlays the real one to capture credentials",
@@ -1168,6 +1119,15 @@
                 theme: "",
                 action: "Had their username and password stolen by the attacker",
                 isCredential: true,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            },
+            custom: {
+                title: "Congratulations!",
+                message: "You've been selected for a special reward. Click the button below to claim your prize!",
+                buttonText: "Claim Prize!",
+                theme: "",
+                action: "Performed an unintended action on the target website",
+                isCredential: false,
                 severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
             }
         };
@@ -1183,7 +1143,7 @@
             return {
                 target: params.get('target') || CONFIG.targetUrl || '',
                 name: params.get('name') || CONFIG.targetName || '',
-                scenario: params.get('scenario') || CONFIG.defaultScenario || 'custom',
+                scenario: params.get('scenario') || CONFIG.defaultScenario || 'credential',
                 opacity: parseInt(params.get('opacity')) || CONFIG.defaultOpacity || 50,
                 overlayOpacity: parseInt(params.get('overlayOpacity')) || CONFIG.defaultOverlayOpacity || 100,
                 formX: parseInt(params.get('formX')) || CONFIG.formPosition.x || 50,
