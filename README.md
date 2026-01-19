@@ -5,11 +5,12 @@ A professional clickjacking (CWE-1021) demonstration tool for security assessmen
 ## Features
 
 - **Multiple Attack Scenarios**: Click hijacking, credential harvesting, payment confirmation, OAuth permissions
-- **Credential Harvesting Mode**: Transparent overlay captures login credentials
-- **Stealth Mode**: Invisible form fields with visible text input
-- **Positioning Controls**: Arrow pad, X/Y/W inputs, field size adjustments
+- **Credential Harvesting Mode**: Overlay captures login credentials in real-time
+- **Stealth Mode**: Invisible form borders with solid background to mask real placeholders
+- **Full Positioning Controls**: Arrow pad, X/Y/W, field sizing, radius, padding, button offset
 - **Attacker/Victim Views**: Toggle between setup and demonstration modes
-- **URL Parameters**: Configure via query string for easy deployment
+- **Customizable Appearance**: Iframe size, field colors, border radius, text padding
+- **Keyboard Shortcuts**: Arrow keys for positioning, Escape to exit victim view
 
 ## Quick Start
 
@@ -27,14 +28,26 @@ const CONFIG = {
 malicious_page.html?target=https://target.com/login&scenario=credential
 ```
 
-## URL Parameters
+## Controls
 
-| Parameter | Description |
-|-----------|-------------|
-| `target` | Target URL to embed |
-| `scenario` | `custom`, `social`, `payment`, `permissions`, `danger`, `credential` |
-| `formX`, `formY`, `formW` | Overlay position and width |
-| `fieldH`, `fieldFont`, `fieldGap` | Field height, font size, spacing |
+| Control | Description |
+|---------|-------------|
+| **Iframe Size** | Adjust iframe width × height to match target page |
+| **Arrow Pad** | Move overlay position (or use keyboard arrows) |
+| **X, Y, W** | Overlay position and width |
+| **H, Font, Gap** | Field height, font size, spacing |
+| **Rad, Pad** | Border radius and input padding |
+| **Button Offset X/Y** | Position submit button independently |
+| **Overlay Slider** | Overlay opacity for alignment |
+| **Stealth Toggle** | Enable invisible fields mode |
+| **Bg / Text Colors** | Match target form colors |
+
+## Keyboard Shortcuts
+
+| Key | Action |
+|-----|--------|
+| `↑ ↓ ← →` | Move overlay (in credential mode) |
+| `Escape` | Exit victim view |
 
 ## Defenses
 
