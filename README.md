@@ -2,6 +2,7 @@
 A "Clickjacking" demonstration tool for security assessments.
 - [CWE-1021: Improper Restriction of Rendered UI Layers or Frames](https://cwe.mitre.org/data/definitions/1021.html)
 - [CAPEC-103: Clickjacking](https://capec.mitre.org/data/definitions/103.html)
+> > **Disclaimer:** For authorized security testing only. Use this project only on systems you own or where you have explicit written permission to test. You are solely responsible for how you use it; the author(s) assume no liability for any misuse, damage, or legal consequences resulting from use of this project or its contents.
 
 <img width="1751" height="900" alt="image" src="https://github.com/user-attachments/assets/15dec245-571f-4449-a12b-780214c3f693" />
 
@@ -50,6 +51,3 @@ const CONFIG = {
 
 ## License
 Mozilla Public License 2.0
-
-## Disclaimer
-For authorized security testing only. Use this project only on systems you own or where you have explicit written permission to test. You are solely responsible for how you use it; the author(s) assume no liability for any misuse, damage, or legal consequences resulting from use of this project or its contents.
