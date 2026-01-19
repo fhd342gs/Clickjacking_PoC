@@ -29,11 +29,6 @@ const CONFIG = {
 };
 ```
 
-**Option 2: URL Parameters**
-```
-malicious_page.html?target=https://target.com/login&scenario=credential
-```
-
 ## Controls
 | Control | Description |
 |---------|-------------|
