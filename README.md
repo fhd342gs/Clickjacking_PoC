@@ -1,5 +1,7 @@
 # Clickjacking PoC
-A Clickjacking [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html) demonstration tool for security assessments.
+A "Clickjacking" demonstration tool for security assessments.
+- [CWE-1021: Improper Restriction of Rendered UI Layers or Frames](https://cwe.mitre.org/data/definitions/1021.html)
+- [CAPEC-103: Clickjacking](https://capec.mitre.org/data/definitions/103.html)
 
 <img width="1751" height="900" alt="image" src="https://github.com/user-attachments/assets/15dec245-571f-4449-a12b-780214c3f693" />
 
