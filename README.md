@@ -18,7 +18,7 @@ A "Clickjacking" demonstration tool for security assessments.
 ## Quick Start
 **Option 1: URL Parameters**
 ```
-malicious_page.html?target=https://target.com/login&scenario=credential
+assessment.html?target=https://target.com/login&scenario=credential
 ```
 
 **Option 2: Edit CONFIG**
