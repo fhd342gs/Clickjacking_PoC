@@ -1,9 +1,11 @@
 # Clickjacking PoC
-
 A professional clickjacking (CWE-1021) demonstration tool for security assessments.
 
-## Features
 
+## Disclaimer
+For authorized security testing only. Use this project only on systems you own or where you have explicit written permission to test. You are solely responsible for how you use it; the author(s) assume no liability for any misuse, damage, or legal consequences resulting from use of this project or its contents.
+
+## Features
 - **Multiple Attack Scenarios**: Click hijacking, credential harvesting, payment confirmation, OAuth permissions
 - **Credential Harvesting Mode**: Overlay captures login credentials in real-time
 - **Stealth Mode**: Invisible form borders with solid background to mask real placeholders
@@ -13,7 +15,6 @@ A professional clickjacking (CWE-1021) demonstration tool for security assessmen
 - **Keyboard Shortcuts**: Arrow keys for positioning, Escape to exit victim view
 
 ## Quick Start
-
 **Option 1: Edit CONFIG**
 ```javascript
 const CONFIG = {
@@ -29,7 +30,6 @@ malicious_page.html?target=https://target.com/login&scenario=credential
 ```
 
 ## Controls
-
 | Control | Description |
 |---------|-------------|
 | **Iframe Size** | Adjust iframe width × height to match target page |
@@ -43,25 +43,10 @@ malicious_page.html?target=https://target.com/login&scenario=credential
 | **Bg / Text Colors** | Match target form colors |
 
 ## Keyboard Shortcuts
-
 | Key | Action |
 |-----|--------|
 | `↑ ↓ ← →` | Move overlay (in credential mode) |
 | `Escape` | Exit victim view |
 
-## Defenses
-
-Websites should implement:
-
-```
-X-Frame-Options: DENY
-Content-Security-Policy: frame-ancestors 'none';
-```
-
-## Disclaimer
-
-For **authorized security testing only**. Only test systems you own or have explicit permission to test.
-
 ## License
-
 Mozilla Public License 2.0
