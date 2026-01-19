@@ -15,7 +15,12 @@ A "Clickjacking" demonstration tool for security assessments.
 - **Keyboard Shortcuts**: Arrow keys for positioning, Escape to exit victim view
 
 ## Quick Start
-**Option 1: Edit CONFIG**
+**Option 1: URL Parameters**
+```
+malicious_page.html?target=https://target.com/login&scenario=credential
+```
+
+**Option 2: Edit CONFIG**
 ```javascript
 const CONFIG = {
     targetUrl: 'https://target.com/login',
