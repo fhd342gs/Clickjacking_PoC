@@ -1,5 +1,5 @@
 # Clickjacking PoC
-A professional clickjacking (CWE-1021) demonstration tool for security assessments.
+A Clickjacking [CWE-1021](https://cwe.mitre.org/data/definitions/1021.html) demonstration tool for security assessments.
 
 <img width="1751" height="900" alt="image" src="https://github.com/user-attachments/assets/15dec245-571f-4449-a12b-780214c3f693" />
 
